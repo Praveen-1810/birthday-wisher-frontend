@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // ensures assets load correctly on Vercel
+  base: './' // fixes blank page issues on Vercel
 });
