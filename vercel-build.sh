@@ -1,6 +1,6 @@
 #!/bin/bash
-# Make vite executable
+# Fix vite permission issue
 chmod +x node_modules/.bin/vite
 
-# Build the project
+# Run vite build
 npx vite build
