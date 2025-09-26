@@ -10,6 +10,8 @@ export default function ViewWish() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [wish, setWish] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -17,7 +19,38 @@ export default function ViewWish() {
   });
 
   useEffect(() => {
-    axios.get(`${API_BASE}/api/wish/${id}`).then((res) => setWish(res.data));
+    const fetchWish = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log(`Fetching wish from: ${API_BASE}/api/wish/${id}`);
+        
+        const response = await axios.get(`${API_BASE}/api/wish/${id}`);
+        console.log("Wish data received:", response.data);
+        
+        // Fix image URLs that point to localhost
+        const wishData = response.data;
+        if (wishData.images) {
+          wishData.images = wishData.images.map(img => 
+            img.replace('http://localhost:5000', API_BASE)
+          );
+        }
+        if (wishData.video) {
+          wishData.video = wishData.video.replace('http://localhost:5000', API_BASE);
+        }
+        
+        setWish(wishData);
+      } catch (err) {
+        console.error("Error fetching wish:", err);
+        setError(err.response?.data?.error || "Failed to load wish");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchWish();
+    }
 
     const handleResize = () =>
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -25,21 +58,64 @@ export default function ViewWish() {
     return () => window.removeEventListener("resize", handleResize);
   }, [id]);
 
-  if (!wish)
+  // Loading state
+  if (loading) {
     return (
-      <div className="text-center text-xl mt-20 text-white">
-        ✨ Loading your special wish...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-50 to-amber-50">
+        <div className="text-center">
+          <div className="animate-spin mb-4 h-12 w-12 rounded-full border-4 border-pink-300 border-t-pink-600 mx-auto"></div>
+          <p className="text-xl text-gray-700">✨ Loading your special wish...</p>
+        </div>
       </div>
     );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-50 to-amber-50 p-6">
+        <div className="max-w-md w-full bg-white/90 rounded-xl p-6 shadow-lg text-center">
+          <div className="text-6xl mb-4">😔</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No wish found
+  if (!wish) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-50 to-amber-50 p-6">
+        <div className="max-w-md w-full bg-white/90 rounded-xl p-6 shadow-lg text-center">
+          <div className="text-6xl mb-4">🎁</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Wish Not Found</h2>
+          <p className="text-gray-600 mb-4">This birthday wish doesn't exist or has been removed.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+          >
+            Create New Wish
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Default fallback images if wish.images is empty
   const images =
     wish.images && wish.images.length > 0
       ? wish.images
       : [
-          "/images/birthday-cake.png",
-          "/images/balloons.png",
-          "/images/gift-box.png",
+          "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+          "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&h=600&fit=crop",
+          "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=800&h=600&fit=crop",
         ];
 
   const nextSlide = () => {
@@ -153,7 +229,7 @@ export default function ViewWish() {
       {wish.video && (
         <div className="absolute bottom-24 flex justify-center w-full">
           <button
-            onClick={() => navigate(`/surprise/${wish.id}`)}
+            onClick={() => navigate(`/surprise/${wish.id || wish._id}`)}
             className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-full shadow-lg text-lg font-semibold"
           >
             🎥 Surprise
