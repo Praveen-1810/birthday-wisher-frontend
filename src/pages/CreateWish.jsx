@@ -302,7 +302,7 @@ export default function CreateWish() {
               How it looks ✨
             </h2>
             <p className="text-white/80 mb-6">
-              After creating, copy the generated link and open it to view the wish.
+              Please dont use this web on mobiles , use this web in laptops or computers. After creating, copy the generated link and open it to view the wish.
             </p>
 
             {link && (
